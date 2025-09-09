@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogo da Memória - Pronomes</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="script.js" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+  <header>
+    <h1>🎴 Jogo da Memória - Pronomes</h1>
+    <p>Encontre o pronome e sua classificação!</p>
+  </header>
+
+  <div class="entrada-nome">
+    <input type="text" id="nomeJogador" placeholder="Digite seu nome">
+    <button id="btnConfirmarNome">Confirmar</button>
+  </div>
+
+  <div class="painel hidden" id="painel">
+    <div>Pontos: <span id="pontos">0</span></div>
+    <div>Tempo: <span id="tempo">00:00</span></div>
+    <button id="btnIniciar">Iniciar Jogo</button>
+  </div>
+
+  <div id="orientacao"></div>
+
+  <div class="tabuleiro" id="tabuleiro"></div>
+
+  <div id="vitoria">
+    <span id="mensagemVitoria"></span>
+  </div>
+
+  <div id="placar">
+    <h2>🏆 Placar</h2>
+    <ul id="listaPlacar"></ul>
+  </div>
+
+  <footer>Grupo de Flavio, Luciamara, Victoria e Joao S.</footer>
+</body>
+</html>
