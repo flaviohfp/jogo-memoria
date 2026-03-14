@@ -111,9 +111,26 @@ function iniciarJogo() {
 }
 
 function virarCarta(div) {
-  // Se está bloqueado ou já foi virada, ignora o clique
-  if (bloqueio || div.classList.contains("virada") || div.classList.contains("par-encontrado")) return;
+  // Se o tabuleiro estiver bloqueado temporariamente, ignora o clique
+  if (bloqueio) return;
 
+  // 💡 NOVA REGRA (VER DE NOVO): Se a carta já foi acertada e o jogador quer ler novamente
+  if (div.classList.contains("par-encontrado")) {
+    if (!div.classList.contains("virada")) {
+      div.classList.add("virada"); // Vira a carta para ler
+      
+      // Esconde ela de novo automaticamente após 3 segundos
+      setTimeout(() => {
+        div.classList.remove("virada");
+      }, 3000);
+    }
+    return; // Interrompe a função aqui para não contar como uma jogada normal
+  }
+
+  // Se a carta já está virada (e não é um acerto), ignora
+  if (div.classList.contains("virada")) return;
+
+  // Lógica normal de jogo
   div.classList.add("virada");
 
   if (!primeiraCarta) {
@@ -123,7 +140,7 @@ function virarCarta(div) {
     
     // Verificando se formou o par
     if (primeiraCarta.dataset.id === segundaCarta.dataset.id && primeiraCarta !== segundaCarta) {
-      bloqueio = true; // Trava o tabuleiro para o jogador poder LER o texto
+      bloqueio = true; // Trava o tabuleiro
       
       primeiraCarta.classList.add("par-encontrado");
       segundaCarta.classList.add("par-encontrado");
@@ -131,22 +148,29 @@ function virarCarta(div) {
       pontos++;
       pontosSpan.textContent = pontos;
 
-      // O "tempinho virado pra conseguir ler" (3,5 segundos)
+      // Tempo de leitura após o ACERTO (3,5 segundos)
       setTimeout(() => {
-        bloqueio = false; // Destrava o tabuleiro
+        // AQUI ESTÁ A SUA MUDANÇA: Vira as cartas para baixo de novo!
+        primeiraCarta.classList.remove("virada");
+        segundaCarta.classList.remove("virada");
+        
+        bloqueio = false; // Destrava
         primeiraCarta = null;
+        
         if (pontos === pares.length) finalizarJogo(true);
       }, 3500); 
 
     } else {
-      // Errou, vira de volta rápido
+      // ERROU
       bloqueio = true;
+      
+      // Aumentei o tempo do ERRO para 2 segundos para dar tempo de ler e memorizar
       setTimeout(() => {
         primeiraCarta.classList.remove("virada");
         segundaCarta.classList.remove("virada");
         primeiraCarta = null;
         bloqueio = false;
-      }, 1000);
+      }, 2000); 
     }
   }
 }
