@@ -1,4 +1,6 @@
-// ----------- Firebase Compat -----------
+// ==========================================
+// 1. CONFIGURAÇÃO DO FIREBASE
+// ==========================================
 const firebaseConfig = {
   apiKey: "AIzaSyCEnl_d-er570l6vlK_9vYF2tnmsb7b0DI",
   authDomain: "jogodamemoria-e9a84.firebaseapp.com",
@@ -12,7 +14,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ----------- OS 6 PARES DE HISTÓRIA (12 Cartas) -----------
+// ==========================================
+// 2. DADOS DO JOGO (História)
+// ==========================================
 const pares = [
   { p: "Guerra do Paraguai", d: "Revolta militar e participação política" },
   { p: "Fim da escravidão", d: "Revolta da elite agrária" },
@@ -22,6 +26,9 @@ const pares = [
   { p: "Questão Religiosa", d: "Conflito entre a Igreja e Dom Pedro II" }
 ];
 
+// ==========================================
+// 3. VARIÁVEIS E ELEMENTOS DA TELA
+// ==========================================
 const tabuleiro = document.getElementById("tabuleiro");
 const pontosSpan = document.getElementById("pontos");
 const tempoSpan = document.getElementById("tempo");
@@ -43,15 +50,18 @@ let tempo = 0;
 let timer = null;
 let jogoFinalizado = false;
 let jogadorAtual = "";
-const tempoLimite = 300; // 5 min
+const tempoLimite = 300; // 5 minutos em segundos
 
-// ----------- Eventos Iniciais -----------
+// ==========================================
+// 4. EVENTOS INICIAIS E FLUXO DO JOGO
+// ==========================================
 btnConfirmarNome.addEventListener("click", () => {
   const nome = entradaNome.value.trim();
-  if (!nome) { alert("Escreva seu nome!"); return; }
+  if (!nome) { alert("Escreva o nome do seu grupo!"); return; }
   jogadorAtual = nome;
   document.querySelector(".entrada-nome").classList.add("hidden");
   painel.classList.remove("hidden");
+  carregarPlacarOnline(); // Já mostra o ranking atual assim que o grupo entra
 });
 
 btnIniciar.addEventListener("click", iniciarJogo);
@@ -62,20 +72,28 @@ function iniciarJogo() {
   
   btnIniciar.disabled = true;
   btnReiniciar.classList.add("hidden");
-  tabuleiro.innerHTML = "";
-  pontos = 0; tempo = 0; jogoFinalizado = false;
-  pontosSpan.textContent = "0"; tempoSpan.textContent = "00:00";
-  clearInterval(timer);
+  vitoriaDiv.classList.remove("show");
   vitoriaDiv.classList.add("hidden");
+  placarDiv.classList.remove("show");
   placarDiv.classList.add("hidden");
+  
+  tabuleiro.innerHTML = "";
+  pontos = 0; 
+  tempo = 0; 
+  jogoFinalizado = false;
+  pontosSpan.textContent = "0"; 
+  tempoSpan.textContent = "00:00";
+  clearInterval(timer);
 
+  // Cria e embaralha as cartas
   let cartas = [];
   pares.forEach(par => {
     cartas.push({ texto: par.p, id: par.p });
     cartas.push({ texto: par.d, id: par.p });
   });
-  cartas.sort(() => 0.5 - Math.random()); // Embaralha
+  cartas.sort(() => 0.5 - Math.random()); 
 
+  // Renderiza as cartas na tela
   cartas.forEach(carta => {
     const div = document.createElement("div");
     div.classList.add("carta");
@@ -103,34 +121,35 @@ function iniciarJogo() {
     document.querySelectorAll(".carta").forEach(c => c.classList.remove("virada"));
     bloqueio = false;
 
+    // Inicia o relógio
     timer = setInterval(() => {
-      tempo++; atualizarTempo();
+      tempo++; 
+      atualizarTempo();
       if (tempo >= tempoLimite) finalizarJogo(false);
     }, 1000);
   }, 3500); 
 }
 
+// ==========================================
+// 5. LÓGICA DE VIRAR AS CARTAS
+// ==========================================
 function virarCarta(div) {
-  // Se o tabuleiro estiver bloqueado temporariamente, ignora o clique
   if (bloqueio) return;
 
-  // 💡 NOVA REGRA (VER DE NOVO): Se a carta já foi acertada e o jogador quer ler novamente
+  // 💡 REGRA DE ESPIAR: Se a carta já foi acertada e o jogador quer ler novamente
   if (div.classList.contains("par-encontrado")) {
     if (!div.classList.contains("virada")) {
-      div.classList.add("virada"); // Vira a carta para ler
-      
-      // Esconde ela de novo automaticamente após 3 segundos
-      setTimeout(() => {
-        div.classList.remove("virada");
-      }, 3000);
+      div.classList.add("virada"); 
+      // Esconde de novo após 3 segundos
+      setTimeout(() => div.classList.remove("virada"), 3000);
     }
-    return; // Interrompe a função aqui para não contar como uma jogada normal
+    return;
   }
 
-  // Se a carta já está virada (e não é um acerto), ignora
+  // Se já está virada (durante uma jogada normal), ignora
   if (div.classList.contains("virada")) return;
 
-  // Lógica normal de jogo
+  // Vira a carta
   div.classList.add("virada");
 
   if (!primeiraCarta) {
@@ -138,9 +157,9 @@ function virarCarta(div) {
   } else {
     const segundaCarta = div;
     
-    // Verificando se formou o par
+    // ACERTOU O PAR
     if (primeiraCarta.dataset.id === segundaCarta.dataset.id && primeiraCarta !== segundaCarta) {
-      bloqueio = true; // Trava o tabuleiro
+      bloqueio = true;
       
       primeiraCarta.classList.add("par-encontrado");
       segundaCarta.classList.add("par-encontrado");
@@ -148,29 +167,33 @@ function virarCarta(div) {
       pontos++;
       pontosSpan.textContent = pontos;
 
-      // Tempo de leitura após o ACERTO (3,5 segundos)
+      // Se for a última carta, trava o relógio IMEDIATAMENTE para não prejudicar o ranking
+      if (pontos === pares.length) {
+        clearInterval(timer);
+      }
+
+      // Tempo de leitura após o acerto (3.5s)
       setTimeout(() => {
-        // AQUI ESTÁ A SUA MUDANÇA: Vira as cartas para baixo de novo!
+        // Vira as cartas de volta para baixo
         primeiraCarta.classList.remove("virada");
         segundaCarta.classList.remove("virada");
         
-        bloqueio = false; // Destrava
+        bloqueio = false;
         primeiraCarta = null;
         
+        // Só chama a tela final depois que o jogador terminou de ler
         if (pontos === pares.length) finalizarJogo(true);
       }, 3500); 
 
     } else {
-      // ERROU
+      // ERROU O PAR
       bloqueio = true;
-      
-      // Aumentei o tempo do ERRO para 2 segundos para dar tempo de ler e memorizar
       setTimeout(() => {
         primeiraCarta.classList.remove("virada");
         segundaCarta.classList.remove("virada");
         primeiraCarta = null;
         bloqueio = false;
-      }, 2000); 
+      }, 2000); // 2 segundos para memorizar o erro
     }
   }
 }
@@ -181,45 +204,77 @@ function atualizarTempo() {
   tempoSpan.textContent = (min < 10 ? "0" : "") + min + ":" + (seg < 10 ? "0" : "") + seg;
 }
 
+// ==========================================
+// 6. FIM DE JOGO E PLACAR FIREBASE
+// ==========================================
 function finalizarJogo(venceu) {
   clearInterval(timer);
   jogoFinalizado = true;
   btnIniciar.disabled = false;
   btnReiniciar.classList.remove("hidden");
+  
   vitoriaDiv.classList.remove("hidden");
+  vitoriaDiv.classList.add("show");
 
   if (venceu) {
-    mensagemVitoria.textContent = `🎉 Vitória histórica! Tempo: ${tempoSpan.textContent}`;
+    mensagemVitoria.textContent = `🎉 Missão Cumprida! Tempo: ${tempoSpan.textContent}`;
     salvarPlacarOnline(jogadorAtual, tempo);
   } else {
     mensagemVitoria.textContent = `⏰ O tempo acabou! A história não espera.`;
   }
+  
   placarDiv.classList.remove("hidden");
-  carregarPlacarOnline();
+  placarDiv.classList.add("show");
 }
 
-// Lógica de Banco de Dados mantida
-function salvarPlacarOnline(nome, tempo) { db.ref("placar").push({ nome, tempo }); }
+function salvarPlacarOnline(nome, tempoTotal) {
+  db.ref("placar").push({ 
+    nome: nome, 
+    tempo: tempoTotal 
+  });
+}
 
 function carregarPlacarOnline() {
-  db.ref("placar").once("value", snapshot => {
-    const placar = snapshot.val() || {};
-    const arrayPlacar = Object.values(placar).sort((a, b) => a.tempo - b.tempo);
+  // O .on("value") faz o placar atualizar em tempo real!
+  db.ref("placar").on("value", snapshot => {
+    const placar = snapshot.val();
     listaPlacar.innerHTML = "";
     
-    arrayPlacar.slice(0, 5).forEach((p, i) => { // Mostra só os 5 melhores
+    if (!placar) {
+      listaPlacar.innerHTML = "<li>Nenhum grupo registrou tempo. Seja o primeiro!</li>";
+      return;
+    }
+
+    // Pega do menor tempo para o maior tempo (Ranking de Velocidade)
+    const arrayPlacar = Object.values(placar).sort((a, b) => a.tempo - b.tempo);
+    
+    // Mostra o TOP 5
+    arrayPlacar.slice(0, 5).forEach((p, i) => { 
       let li = document.createElement("li");
-      let min = Math.floor(p.tempo / 60); let seg = p.tempo % 60;
-      li.innerHTML = `<span>${i + 1}º ${p.nome}</span> <span>${(min < 10 ? "0" : "") + min}:${(seg < 10 ? "0" : "") + seg}</span>`;
+      let min = Math.floor(p.tempo / 60); 
+      let seg = p.tempo % 60;
+      let tempoFormatado = (min < 10 ? "0" : "") + min + ":" + (seg < 10 ? "0" : "") + seg;
+      
+      li.innerHTML = `<span>${i + 1}º ${p.nome}</span> <span>⏱️ ${tempoFormatado}</span>`;
+      
+      // Classes do CSS para Ouro, Prata e Bronze
       if (i === 0) li.classList.add("top1");
+      else if (i === 1) li.classList.add("top2");
+      else if (i === 2) li.classList.add("top3");
+      
       listaPlacar.appendChild(li);
     });
   });
 }
 
+// ==========================================
+// 7. UTILITÁRIOS
+// ==========================================
 function verificarOrientacao() {
   if (window.innerHeight > window.innerWidth && window.innerWidth <= 768) {
-    orientacaoDiv.style.display = "block";
-  } else { orientacaoDiv.style.display = "none"; }
+    orientacaoDiv.classList.add("show");
+  } else { 
+    orientacaoDiv.classList.remove("show"); 
+  }
 }
 window.addEventListener("resize", verificarOrientacao);
