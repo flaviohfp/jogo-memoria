@@ -12,17 +12,14 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ----------- Variáveis do jogo -----------
+// ----------- OS 6 PARES DE HISTÓRIA (12 Cartas) -----------
 const pares = [
-  { palavra: "eu", tipo: "Pronome pessoal - 1ª pessoa singular" },
-  { palavra: "ele", tipo: "Pronome pessoal - 3ª pessoa singular" },
-  { palavra: "nós", tipo: "Pronome pessoal - 1ª pessoa plural" },
-  { palavra: "meu", tipo: "Pronome possessivo - 1ª pessoa singular" },
-  { palavra: "seu", tipo: "Pronome possessivo - 3ª pessoa singular" },
-  { palavra: "este", tipo: "Pronome demonstrativo - proximidade" },
-  { palavra: "aquele", tipo: "Pronome demonstrativo - longe" },
-  { palavra: "quem", tipo: "Pronome interrogativo" },
-  { palavra: "que", tipo: "Pronome relativo" }
+  { p: "Guerra do Paraguai", d: "Revolta militar e participação política" },
+  { p: "Fim da escravidão", d: "Revolta da elite agrária" },
+  { p: "Desafios na sucessão", d: "Dom Pedro II não teve filhos homens" },
+  { p: "Pressão externa", d: "Inglaterra querendo a libertação de escravos" },
+  { p: "Deodoro da Fonseca", d: "Líder do golpe militar de 15 de novembro" },
+  { p: "Questão Religiosa", d: "Conflito entre a Igreja e Dom Pedro II" }
 ];
 
 const tabuleiro = document.getElementById("tabuleiro");
@@ -31,6 +28,7 @@ const tempoSpan = document.getElementById("tempo");
 const vitoriaDiv = document.getElementById("vitoria");
 const mensagemVitoria = document.getElementById("mensagemVitoria");
 const btnIniciar = document.getElementById("btnIniciar");
+const btnReiniciar = document.getElementById("btnReiniciar");
 const painel = document.getElementById("painel");
 const entradaNome = document.getElementById("nomeJogador");
 const btnConfirmarNome = document.getElementById("btnConfirmarNome");
@@ -47,41 +45,36 @@ let jogoFinalizado = false;
 let jogadorAtual = "";
 const tempoLimite = 300; // 5 min
 
+// ----------- Eventos Iniciais -----------
 btnConfirmarNome.addEventListener("click", () => {
   const nome = entradaNome.value.trim();
-  if (!nome) { alert("Digite seu nome para jogar!"); return; }
+  if (!nome) { alert("Escreva seu nome!"); return; }
   jogadorAtual = nome;
   document.querySelector(".entrada-nome").classList.add("hidden");
   painel.classList.remove("hidden");
 });
 
-btnIniciar.addEventListener("click", () => {
-  if (!jogoFinalizado && !btnIniciar.disabled) iniciarJogo();
-});
+btnIniciar.addEventListener("click", iniciarJogo);
+btnReiniciar.addEventListener("click", iniciarJogo);
 
 function iniciarJogo() {
-  if (window.innerHeight > window.innerWidth) {
-    orientacaoDiv.textContent = "📱 Por favor, vire seu celular para horizontal para jogar!";
-    orientacaoDiv.classList.add("show");
-    return;
-  } else { orientacaoDiv.classList.remove("show"); }
-
+  verificarOrientacao();
+  
   btnIniciar.disabled = true;
+  btnReiniciar.classList.add("hidden");
   tabuleiro.innerHTML = "";
-  pontos = 0;
-  tempo = 0;
-  pontosSpan.textContent = "0";
-  tempoSpan.textContent = "00:00";
+  pontos = 0; tempo = 0; jogoFinalizado = false;
+  pontosSpan.textContent = "0"; tempoSpan.textContent = "00:00";
   clearInterval(timer);
-  vitoriaDiv.classList.remove("show");
+  vitoriaDiv.classList.add("hidden");
   placarDiv.classList.add("hidden");
 
   let cartas = [];
   pares.forEach(par => {
-    cartas.push({ texto: par.palavra, id: par.palavra });
-    cartas.push({ texto: par.tipo, id: par.palavra });
+    cartas.push({ texto: par.p, id: par.p });
+    cartas.push({ texto: par.d, id: par.p });
   });
-  cartas.sort(() => 0.5 - Math.random());
+  cartas.sort(() => 0.5 - Math.random()); // Embaralha
 
   cartas.forEach(carta => {
     const div = document.createElement("div");
@@ -94,7 +87,6 @@ function iniciarJogo() {
 
     const verso = document.createElement("span");
     verso.classList.add("verso");
-    verso.textContent = "?";
 
     div.appendChild(frente);
     div.appendChild(verso);
@@ -103,22 +95,24 @@ function iniciarJogo() {
     tabuleiro.appendChild(div);
   });
 
+  // Mostra as cartas no começo por 3.5 segundos para memorização
   bloqueio = true;
   document.querySelectorAll(".carta").forEach(c => c.classList.add("virada"));
+  
   setTimeout(() => {
     document.querySelectorAll(".carta").forEach(c => c.classList.remove("virada"));
     bloqueio = false;
 
     timer = setInterval(() => {
-      tempo++;
-      atualizarTempo();
+      tempo++; atualizarTempo();
       if (tempo >= tempoLimite) finalizarJogo(false);
     }, 1000);
-  }, 4000);
+  }, 3500); 
 }
 
 function virarCarta(div) {
-  if (bloqueio || div.classList.contains("virada") || div.classList.contains("acertou")) return;
+  // Se está bloqueado ou já foi virada, ignora o clique
+  if (bloqueio || div.classList.contains("virada") || div.classList.contains("par-encontrado")) return;
 
   div.classList.add("virada");
 
@@ -126,15 +120,26 @@ function virarCarta(div) {
     primeiraCarta = div;
   } else {
     const segundaCarta = div;
+    
+    // Verificando se formou o par
     if (primeiraCarta.dataset.id === segundaCarta.dataset.id && primeiraCarta !== segundaCarta) {
-      primeiraCarta.classList.add("acertou", "animar-acerto");
-      segundaCarta.classList.add("acertou", "animar-acerto");
+      bloqueio = true; // Trava o tabuleiro para o jogador poder LER o texto
+      
+      primeiraCarta.classList.add("par-encontrado");
+      segundaCarta.classList.add("par-encontrado");
+      
       pontos++;
       pontosSpan.textContent = pontos;
 
-      if (pontos === pares.length) finalizarJogo(true);
-      primeiraCarta = null;
+      // O "tempinho virado pra conseguir ler" (3,5 segundos)
+      setTimeout(() => {
+        bloqueio = false; // Destrava o tabuleiro
+        primeiraCarta = null;
+        if (pontos === pares.length) finalizarJogo(true);
+      }, 3500); 
+
     } else {
+      // Errou, vira de volta rápido
       bloqueio = true;
       setTimeout(() => {
         primeiraCarta.classList.remove("virada");
@@ -147,53 +152,50 @@ function virarCarta(div) {
 }
 
 function atualizarTempo() {
-  let minutos = Math.floor(tempo / 60);
-  let segundos = tempo % 60;
-  tempoSpan.textContent =
-    (minutos < 10 ? "0" : "") + minutos + ":" + (segundos < 10 ? "0" : "") + segundos;
+  let min = Math.floor(tempo / 60);
+  let seg = tempo % 60;
+  tempoSpan.textContent = (min < 10 ? "0" : "") + min + ":" + (seg < 10 ? "0" : "") + seg;
 }
 
 function finalizarJogo(venceu) {
   clearInterval(timer);
   jogoFinalizado = true;
-  btnIniciar.disabled = true;
+  btnIniciar.disabled = false;
+  btnReiniciar.classList.remove("hidden");
+  vitoriaDiv.classList.remove("hidden");
 
   if (venceu) {
-    mensagemVitoria.textContent = `🎉 Parabéns, ${jogadorAtual}! Você fez ${pontos} pontos em ${tempoSpan.textContent}`;
+    mensagemVitoria.textContent = `🎉 Vitória histórica! Tempo: ${tempoSpan.textContent}`;
     salvarPlacarOnline(jogadorAtual, tempo);
   } else {
-    mensagemVitoria.textContent = `⏰ Tempo esgotado, ${jogadorAtual}!`;
+    mensagemVitoria.textContent = `⏰ O tempo acabou! A história não espera.`;
   }
-  vitoriaDiv.classList.add("show");
   placarDiv.classList.remove("hidden");
   carregarPlacarOnline();
 }
 
-function salvarPlacarOnline(nome, tempo) {
-  db.ref("placar").push({ nome, tempo });
-}
+// Lógica de Banco de Dados mantida
+function salvarPlacarOnline(nome, tempo) { db.ref("placar").push({ nome, tempo }); }
 
 function carregarPlacarOnline() {
-  db.ref("placar").on("value", snapshot => {
+  db.ref("placar").once("value", snapshot => {
     const placar = snapshot.val() || {};
     const arrayPlacar = Object.values(placar).sort((a, b) => a.tempo - b.tempo);
     listaPlacar.innerHTML = "";
-    arrayPlacar.forEach((p, i) => {
+    
+    arrayPlacar.slice(0, 5).forEach((p, i) => { // Mostra só os 5 melhores
       let li = document.createElement("li");
-      let minutos = Math.floor(p.tempo / 60);
-      let segundos = p.tempo % 60;
-      li.textContent = `${p.nome} - ${(minutos < 10 ? "0" : "") + minutos}:${(segundos < 10 ? "0" : "") + segundos}`;
+      let min = Math.floor(p.tempo / 60); let seg = p.tempo % 60;
+      li.innerHTML = `<span>${i + 1}º ${p.nome}</span> <span>${(min < 10 ? "0" : "") + min}:${(seg < 10 ? "0" : "") + seg}</span>`;
       if (i === 0) li.classList.add("top1");
-      if (i === 1) li.classList.add("top2");
-      if (i === 2) li.classList.add("top3");
       listaPlacar.appendChild(li);
     });
   });
 }
 
-window.addEventListener("resize", () => {
-  if (window.innerHeight > window.innerWidth && !jogoFinalizado) {
-    orientacaoDiv.textContent = "📱 Por favor, vire seu celular para horizontal para jogar!";
-    orientacaoDiv.classList.add("show");
-  } else { orientacaoDiv.classList.remove("show"); }
-});
+function verificarOrientacao() {
+  if (window.innerHeight > window.innerWidth && window.innerWidth <= 768) {
+    orientacaoDiv.style.display = "block";
+  } else { orientacaoDiv.style.display = "none"; }
+}
+window.addEventListener("resize", verificarOrientacao);

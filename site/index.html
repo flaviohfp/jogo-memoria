@@ -3,45 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jogo da Memória - Pronomes</title>
+  <title>Jogo da Memória - História do Brasil</title>
   <link rel="stylesheet" href="style.css">
   <script type="module" src="script.js" defer></script>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-
-  <!-- Firebase -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <header>
-    <h1>🎴 Jogo da Memória - Pronomes</h1>
-    <p>Encontre o pronome e sua classificação!</p>
+    <h1>🏛️ Jogo da Memória - O Fim do Império</h1>
+    <p>Encontre a causa e a consequência dos fatos históricos!</p>
   </header>
 
   <div class="entrada-nome">
-    <input type="text" id="nomeJogador" placeholder="Digite seu nome">
-    <button id="btnConfirmarNome">Confirmar</button>
+    <input type="text" id="nomeJogador" placeholder="Digite seu nome histórico...">
+    <button id="btnConfirmarNome">Entrar na Máquina do Tempo</button>
   </div>
 
   <div class="painel hidden" id="painel">
     <div>Pontos: <span id="pontos">0</span></div>
     <div>Tempo: <span id="tempo">00:00</span></div>
-    <button id="btnIniciar">Iniciar Jogo</button>
+    <button id="btnIniciar">Iniciar Missão</button>
   </div>
 
-  <div id="orientacao"></div>
+  <div id="orientacao">📱 Por favor, vire seu celular na horizontal!</div>
 
   <div class="tabuleiro" id="tabuleiro"></div>
 
   <div id="vitoria">
     <span id="mensagemVitoria"></span>
+    <button id="btnReiniciar" class="hidden">Jogar Novamente</button>
   </div>
 
   <div id="placar">
-    <h2>🏆 Placar</h2>
+    <h2>📜 Hall da Fama Histórica</h2>
     <ul id="listaPlacar"></ul>
   </div>
 
-  <footer>Grupo de Flavio, Luciamara, Victoria e Joao S.</footer>
+  <footer>Desenvolvido por Grupo de Flavio</footer>
 </body>
 </html>
